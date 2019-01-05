@@ -1,0 +1,152 @@
+import os
+import numpy as np
+from PIL import Image
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.decomposition import PCA
+
+
+train_path = "E:\\train_data"
+
+raw_picture = []
+target = []
+image_RGB = []
+train_data = []
+train_target = []
+test_data = []
+test_target = []
+
+
+def get_file(file_path):
+    food_idx = 0
+    for food_name in os.listdir(file_path):
+        # print("food_name: ", food_name)
+        target.append(food_name)
+        raw_picture.append([])
+        food_path = file_path + '\\' + food_name
+        for picture_name in os.listdir(food_path):
+            picture_path = food_path + '\\' + picture_name
+            tmp_file = open(picture_path, 'rb')
+            picture = Image.open(tmp_file).convert('RGB')
+            # resize
+            (width, height) = picture.size
+            (width, height) = (40, 40)  # 0.4 is flexible
+            picture = picture.resize((width, height), Image.ANTIALIAS)
+
+            if type(picture.getpixel((0,0))) == int:
+                print("name: ", picture_name)
+
+            raw_picture[food_idx].append(picture)
+            tmp_file.close()
+        food_idx += 1
+
+
+def image_process():
+    for i in range(len(raw_picture)):
+        for j in range(len(raw_picture[i])):
+            # resize the picture
+            picture = raw_picture[i][j]
+            (width, height) = picture.size
+
+            # RGB matrix calloc
+            image_RGB.append([])
+
+            # get the RGB
+            # pixel = picture.load()
+
+            # print("width;height: ", width, " ", height)
+            print(j)
+            for x_idx in range(width):
+                for y_idx in range(height):
+
+                    x = picture.getpixel((x_idx, y_idx))
+                    if type(x) == int:
+                        print(j, "error")
+                        continue
+                    (R, G, B) = x
+                    r = R
+                    g = G
+                    b = B
+                    image_RGB[i*len(raw_picture[i])+j].append(r)
+                    image_RGB[i*len(raw_picture[i])+j].append(g)
+                    image_RGB[i*len(raw_picture[i])+j].append(b)
+            # print("ttt: ", len(image_RGB[i]))
+
+
+def train_data_target_process():
+    for i in range(len(raw_picture)):
+        for j in range(len(raw_picture[i])):
+            if j < int(0.8*len(raw_picture[i])):
+                # print("right j: ", j)
+                train_data.append(image_RGB[i*len(raw_picture)+j])
+                train_target.append(target[i])
+            else:
+                test_data.append(image_RGB[i*len(raw_picture)+j])
+                test_target.append(target[i])
+
+
+def accuracy(result):
+    max_idx = 0
+    accurate = 0
+    for i in range(len(result)):
+        item = result[i]
+        for j in range(len(item)):
+            if item[j] > item[max_idx]:
+                max_idx = j
+        if target[max_idx] == test_target[i]:
+            accurate += 1
+    return accurate/len(test_data)
+
+
+def main():
+    get_file(train_path)
+    # raw_picture[0][0].show()
+    image_process()
+    train_data_target_process()
+
+    print("--------------------------------------")
+    print(train_target)
+    print(target)
+    print("-------------------process complete----------------------")
+
+    x = np.array(train_data)
+    # x = np.array(raw_picture)
+    pca = PCA(n_components=6000)
+    x = pca.fit_transform(x)
+    pca_test_data = pca.transform(test_data)
+    data = x.tolist()
+
+    print("---------------------after PCA----------------------")
+    print("data: ", data)
+
+    rf = RandomForestClassifier()
+    rf.fit(data, train_target)
+
+    result = rf.predict_proba(pca_test_data)
+    result = result.tolist()
+    print("result: ", result)
+    print(test_target)
+    print(accuracy(result))
+
+    x = np.array(data)
+    pca = PCA(n_components=1)
+    x = pca.fit_transform(x)
+    test_dataa = pca.transform(test_data)
+    data = x
+
+    print("data: ", data)
+    print("test_data: ", test_dataa)
+
+    print("-------------after pca---------------")
+
+    print("---------------predict---------------")
+    print("GaussianNB")  # 高斯贝叶斯分类器
+    clf1 = GaussianNB()
+    clf1.fit(data, np.ravel(target))
+    predictTestLabel1 = clf1.predict_proba(test_dataa)
+    predictTestLabel1 = predictTestLabel1.tolist()
+    print(predictTestLabel1)
+
+
+
+main()
