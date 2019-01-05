@@ -1,0 +1,58 @@
+#recipe 1
+#get calorie
+select ingredient.name, ingredient.calorie*recipe1.amount
+from recipe1, ingredient
+where ingredient.name in
+	(select ingredient.*
+	from recipe1, ingredient
+	where recipe1.name = nutrition.name)
+group by ingredient.name;
+
+#get water
+select ingredient.name, ingredient.water*recipe1.amount
+from recipe1, ingredient
+where ingredient.name in
+	(select ingredient.*
+	from recipe1, ingredient
+	where recipe1.name = nutrition.name)
+group by ingredient.name;
+
+#get protein
+select ingredient.name, ingredient.protein*recipe1.amount
+from recipe1, ingredient
+where ingredient.name in
+	(select ingredient.*
+	from recipe1, ingredient
+	where recipe1.name = nutrition.name)
+group by ingredient.name;
+
+#get fat
+select ingredient.name, ingredient.fat*recipe1.amount
+from recipe1, ingredient
+where ingredient.name in
+	(select ingredient.*
+	from recipe1, ingredient
+	where recipe1.name = nutrition.name)
+group by ingredient.name;
+
+#get danguchun
+select ingredient.name, ingredient.danguchun*recipe1.amount
+from recipe1, ingredient
+where ingredient.name in
+	(select ingredient.*
+	from recipe1, ingredient
+	where recipe1.name = nutrition.name)
+group by ingredient.name;
+
+#get carbon
+select ingredient.name, ingredient.carbon*recipe1.amount
+from recipe1, ingredient
+where ingredient.name in
+	(select ingredient.*
+	from recipe1, ingredient
+	where recipe1.name = nutrition.name)
+group by ingredient.name;
+
+
+
+
