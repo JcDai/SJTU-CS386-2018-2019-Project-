@@ -1,0 +1,69 @@
+import torch
+from torchvision import transforms
+from torchvision.datasets import ImageFolder
+import torch.utils.data as Data
+from torch.autograd import Variable
+import torch.nn as nn
+import numpy as np
+import torchvision.models as models
+
+path = "/Users/jiachengdai/Desktop/DIP/traincopy"
+
+trans = transforms.Compose([transforms.Resize((64, 64)),
+                            transforms.ToTensor()])
+
+# trans = transforms.Compose([transforms.ToTensor()])
+
+EPOCH = 1  # train data n times
+BATCH_SIZE = 10
+LR = 0.001
+
+train_dataSet = ImageFolder("/Users/jiachengdai/Desktop/DIP/traincopy", transform=trans)
+test_dataSet = ImageFolder("/Users/jiachengdai/Desktop/DIP/test", transform=trans)
+train_loader = Data.DataLoader(dataset=train_dataSet, batch_size=BATCH_SIZE, shuffle=True)
+test_loader = Data.DataLoader(dataset=test_dataSet, batch_size=BATCH_SIZE, shuffle=True)
+
+
+rn34 = models.resnet34(pretrained=False).cuda()
+optimizer = torch.optim.SGD(rn34.parameters(), lr=LR)
+loss_func = nn.CrossEntropyLoss()
+for epoch in range(EPOCH):
+    running_loss = 0
+    for step, (x, y) in enumerate(train_loader):
+        b_x = Variable(x).cuda()
+        b_y = Variable(y).cuda()
+
+        output = rn34(b_x)
+        loss = loss_func(output, b_y)
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        running_loss += loss.data[0]
+
+        if step % 200 == 0:
+            print('[%d %5d] loss: %.3f' % (epoch + 1, step, running_loss / 200))
+            running_loss = 0.0
+
+correct = 0
+top5correct = 0
+total = 0
+for data in test_loader:
+    images, labels = data
+    outputs = rn34(Variable(images).cuda()).cpu()
+    top5 = outputs.data.numpy()
+    for idx in range(len(top5)):
+        possible_answer = np.argpartition(-top5[idx], 5)[:5]
+        for i in range(5):
+            if possible_answer[i] == labels[idx]:
+                top5correct += 1
+    _, predicted = torch.max(outputs.data, 1)
+    total += labels.size(0)
+    correct += (predicted == labels).sum()
+
+
+print('Accuracy of the network on the 30 test images: %d %%' % (100 * correct / total))
+print('Accuracy of the network on the top5 images: %d %%' % (100 * top5correct / total))
+
+
+torch.save(rn34, 'zsq1.pkl')
+torch.save(rn34.state_dict(), 'zsq1_params.pkl')
